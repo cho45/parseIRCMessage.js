@@ -6,15 +6,24 @@ function parseIRCMessage (text) {
 	var ret = [];
 	var state = {};
 	for (var i = 0, len = ss.length; i < len; i++) {
-		var text = ss[i];
+		text = ss[i];
 		if (!text) continue;
 		var type = text.charCodeAt(0);
 		switch (type) {
 			case 0x02:
 				state.bold = !state.bold; break;
 			case 0x03:
-				if (text.charCodeAt(1)) state.fg = text.charCodeAt(1);
-				if (text.charCodeAt(2)) state.bg = text.charCodeAt(2);
+				var fgbg = text.slice(1).split(',');
+				if (fgbg[0]) {
+					state.fg = parseIRCMessage.mIRCColors[+fgbg[0]] || +fgbg[0];
+				} else {
+					delete state.fg;
+				}
+				if (fgbg[1]) {
+					state.bg = parseIRCMessage.mIRCColors[+fgbg[1]] || +fgbg[1];
+				} else {
+					delete state.bg;
+				}
 				break;
 			case 0x04:
 				switch (text.charCodeAt(1)) {
@@ -56,12 +65,32 @@ function parseIRCMessage (text) {
 }
 parseIRCMessage.types = [
 	'\u0002',
-	'\u0003[0-9][0-9]?',
+	'\u0003(?:[0-9]?[0-9](?:,[0-9]?[0-9])?)?',
 	'\u0004(?:[\u0060-\u0069\u0029]|..)',
 	'\u0006',
 	'\u000f', // remove all
 	'\u0016', // reverse
-	'\u001b', // ansi
+	'\u001b[0-9]?[0-9]m', // ansi
 	'\u001f'  // underline
 ];
+parseIRCMessage.mIRCColors = {
+	0: "white", //white
+	1: "black", //black
+	2: "blue", //blue (navy)
+	3: "green", //green
+	4: "red", //red
+	5: "brown", //brown (maroon)
+	6: "purple", //purple
+	7: "orange", //orange (olive)
+	8: "yellow", //yellow
+	9: "lime", //light green (lime)
+	10: "teal", //teal (a green/blue cyan)
+	11: "cyan", //light cyan (cyan) (aqua)
+	12: "royal", //light blue (royal)
+	13: "pink", //pink (light purple) (fuchsia)
+	14: "grey", //grey
+	15: "silver" //light grey (silver)
+};
 parseIRCMessage.re = new RegExp('(' + parseIRCMessage.types.join('|') + ')', 'g');
+
+this.parseIRCMessage = parseIRCMessage;
